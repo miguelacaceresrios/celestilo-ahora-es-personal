@@ -62,6 +62,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddControllers();
 
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 
 var app = builder.Build();
 
@@ -87,14 +89,14 @@ async Task SeedAdminUser(IServiceProvider serviceProvider)
     // Crear roles si no existen
     if (!await roleManager.RoleExistsAsync("Admin"))
         await roleManager.CreateAsync(new IdentityRole("Admin"));
-    
+
     if (!await roleManager.RoleExistsAsync("User"))
         await roleManager.CreateAsync(new IdentityRole("User"));
 
     // Crear usuario admin si no existe
     var adminEmail = "admin@example.com";
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    
+
     if (adminUser == null)
     {
         adminUser = new IdentityUser
@@ -103,7 +105,7 @@ async Task SeedAdminUser(IServiceProvider serviceProvider)
             Email = adminEmail,
             EmailConfirmed = true
         };
-        
+
         await userManager.CreateAsync(adminUser, "Admin123!");
         await userManager.AddToRoleAsync(adminUser, "Admin");
     }

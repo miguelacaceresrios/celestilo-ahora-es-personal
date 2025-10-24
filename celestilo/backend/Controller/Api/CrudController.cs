@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Requiere autenticación para todos los endpoints
 public class CrudController : Controller
 {
     private readonly ProductDbContext _context;
@@ -12,7 +11,7 @@ public class CrudController : Controller
     {
         _context = context;
     }
-
+    //Get: api/crud
     [HttpGet]
     public async Task<IActionResult> GetProducts()
     {
