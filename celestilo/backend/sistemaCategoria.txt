@@ -1,0 +1,7 @@
+id=1 significa categoria de maquillaje
+id=2 significa categoria de tecnologia
+id=3 significa categoria de Ropa y accesorios
+id=4 significa categoria de Deportes y fitness
+id=5 significa categoria de Libros y papelería
+id=6 significa categoria de Mascotas
+id=7 significa categoria de joyería
