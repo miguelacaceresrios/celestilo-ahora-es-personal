@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 
     public class LoginModel
     {
-        [Required(ErrorMessage = "El email es requerido")]
+        [Required]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es requerida")]
+        [Required]
         public string Password { get; set; } = string.Empty;
     }

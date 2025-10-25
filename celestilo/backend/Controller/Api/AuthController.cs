@@ -30,13 +30,11 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        if (!ModelState.IsValid) return BadRequest(ModelState);
 
         var (succeeded, response) = await _authService.LoginUserAsync(model);
 
-        if (!succeeded)
-            return Unauthorized(new { message = "Credenciales inválidas" });
+        if (!succeeded) return Unauthorized(new { message = "Credenciales inválidas" });
 
         return Ok(response);
     }

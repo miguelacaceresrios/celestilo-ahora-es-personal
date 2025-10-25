@@ -97,7 +97,7 @@ async Task SeedAdminUser(IServiceProvider serviceProvider)
     var adminEmail = "admin@example.com";
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
-    if (adminUser == null)
+    if (adminUser is null)
     {
         adminUser = new IdentityUser
         {

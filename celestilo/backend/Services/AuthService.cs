@@ -36,20 +36,17 @@ public class AuthService : IAuthService
 
     public async Task<(bool Succeeded, AuthResponse? Response)> LoginUserAsync(LoginModel model)
     {
+        // Verificar si el usuario existe mediante el email y devuelve null si no existe o IdentityUser si existe
         var user = await _userManager.FindByEmailAsync(model.Email);
-        if (user is null)
-        {
-            return (false, null);
-        }
+        
+        if (user is null) return(false, null);
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-        if (!result.Succeeded)
-        {
-            return (false, null);
-        }
-
-        var token = await GenerateJwtToken(user);
+        
+        if (!result.Succeeded) return (false, null);
+        
         var roles = await _userManager.GetRolesAsync(user);
+        var token = await GenerateJwtToken(user, roles);
 
         var response = new AuthResponse
         {
@@ -61,8 +58,8 @@ public class AuthService : IAuthService
 
         return (true, response);
     }
-
-    private async Task<string> GenerateJwtToken(IdentityUser user)
+    //estudiar esto
+    private async Task<string> GenerateJwtToken(IdentityUser user, IList<string> roles )
     {
         var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")!;
         var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")!;
@@ -71,8 +68,7 @@ public class AuthService : IAuthService
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var roles = await _userManager.GetRolesAsync(user);
+       
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
