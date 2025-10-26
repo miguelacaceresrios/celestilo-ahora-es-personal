@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
+var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddDbContext<ProductDbContext>(options => options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING")));
@@ -63,6 +63,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddControllers();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddSingleton<JwtSettings>();
 
 
 var app = builder.Build();

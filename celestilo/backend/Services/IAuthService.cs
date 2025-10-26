@@ -1,5 +1,6 @@
 
 using Microsoft.AspNetCore.Identity;
+
 public interface IAuthService
 {
     Task<IdentityResult> RegisterUserAsync(RegisterModel model);
