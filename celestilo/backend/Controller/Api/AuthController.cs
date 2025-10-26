@@ -1,41 +1,46 @@
 using Microsoft.AspNetCore.Mvc;
-[Route("api/[controller]")]
-[ApiController]
-public class AuthController : ControllerBase
+using Celestilo.Backend.Model.Auth;
+using Celestilo.Backend.Services;
+
+namespace Celestilo.Backend.Controller.Api
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
     {
-        _authService = authService;
-    }
+        private readonly IAuthService _authService;
 
-    // POST: api/auth/register
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterModel model)
-    {
-        if (!ModelState.IsValid) 
-            return BadRequest(ModelState);
-        
-        var result = await _authService.RegisterUserAsync(model);
-
-        if (!result.Succeeded)
+        public AuthController(IAuthService authService)
         {
-            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+            _authService = authService;
         }
-        return Ok(new { message = "Usuario registrado exitosamente" });
-    }
 
-    // POST: api/auth/login
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginModel model)
-    {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        // POST: api/auth/register
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterModel model)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var (succeeded, response) = await _authService.LoginUserAsync(model);
+            var result = await _authService.RegisterUserAsync(model);
 
-        if (!succeeded) return Unauthorized(new { message = "Credenciales inválidas" });
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+            }
+            return Ok(new { message = "Usuario registrado exitosamente" });
+        }
 
-        return Ok(response);
+        // POST: api/auth/login
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var (succeeded, response) = await _authService.LoginUserAsync(model);
+
+            if (!succeeded) return Unauthorized(new { message = "Credenciales inválidas" });
+
+            return Ok(response);
+        }
     }
 }
