@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Celestilo.Backend.Model.Auth;
-using Celestilo.Backend.Services;
 
-namespace Celestilo.Backend.Controller.Api
-{
+
+
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
@@ -43,4 +41,3 @@ namespace Celestilo.Backend.Controller.Api
             return Ok(response);
         }
     }
-}

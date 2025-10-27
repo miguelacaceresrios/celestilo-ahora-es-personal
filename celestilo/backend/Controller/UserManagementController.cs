@@ -21,6 +21,7 @@ public class UserManagementController : ControllerBase
     }
 
     // GET: api/usermanagement/users
+    //ver si seria bueno agregar el [AllowAnonymous]  aqui
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsers()
     {
