@@ -10,8 +10,6 @@ public class AuthService : IAuthService
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly JwtSettings _jwtSettings;
-
-    // Podrías inyectar IConfiguration para leer los valores del JWT en lugar de Environment
     public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, JwtSettings jwtSettings)
     {
         _userManager = userManager;
@@ -29,29 +27,27 @@ public class AuthService : IAuthService
 
         var result = await _userManager.CreateAsync(user, model.Password);
 
-        if (result.Succeeded)
+        if (!result.Succeeded) return (false, null, result.Errors);
+
+        await _userManager.AddToRoleAsync(user, "User");
+
+        var roles = await _userManager.GetRolesAsync(user);
+
+        var token = GenerateJwtToken(user, roles);
+
+        var response = new AuthResponse
         {
-            await _userManager.AddToRoleAsync(user, "User");
-            var roles = await _userManager.GetRolesAsync(user);
-            var token = GenerateJwtToken(user, roles);
+            Token = token,
+            Username = user.UserName!,
+            Email = user.Email!,
+            Roles = roles.ToList()
+        };
 
-            var response = new AuthResponse
-            {
-                Token = token,
-                Username = user.UserName!,
-                Email = user.Email!,
-                Roles = roles.ToList()
-            };
-
-            return (true, response, null);
-        }
-
-        return (false, null, result.Errors);
+        return (true, response, null);
     }
-    //seguir estiando esto SI O SI
+
     public async Task<(bool Succeeded, AuthResponse? Response)> LoginUserAsync(LoginModel model)
     {
-        // Verificar si el usuario existe mediante el email y devuelve null si no existe o IdentityUser si existe
         var user = await _userManager.FindByEmailAsync(model.Email);
 
         if (user is null) return (false, null);
@@ -73,7 +69,6 @@ public class AuthService : IAuthService
 
         return (true, response);
     }
-    //estudiar esto
     private string GenerateJwtToken(IdentityUser user, IList<string> roles)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
@@ -100,5 +95,3 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
-
-//agregar metodo de cerrar sesion11
