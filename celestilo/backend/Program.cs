@@ -1,3 +1,4 @@
+using backend.Services;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -63,6 +64,8 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddSingleton<JwtSettings>();
+
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
 
 var app = builder.Build();

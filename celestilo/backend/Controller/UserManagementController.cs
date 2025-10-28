@@ -1,73 +1,39 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")] // Solo admins pueden acceder
+[Authorize(Roles = "Admin")]
 public class UserManagementController : ControllerBase
 {
+    private readonly IUserManagementService _userManagementService;
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
 
-    public UserManagementController(
-        UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+    public UserManagementController(IUserManagementService userManagementService, UserManager<IdentityUser> userManager)
     {
+        _userManagementService = userManagementService;
         _userManager = userManager;
-        _roleManager = roleManager;
     }
 
     // GET: api/usermanagement/users
-    //ver si seria bueno agregar el [AllowAnonymous]  aqui
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsers()
     {
-        var users = await _userManager.Users.AsNoTracking().ToListAsync();
-        var userDtos = new List<UserDto>();
-
-        foreach (var user in users)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-            userDtos.Add(new UserDto
-            {
-                Id = user.Id,
-                Username = user.UserName ?? string.Empty,
-                Email = user.Email ?? string.Empty,
-                EmailConfirmed = user.EmailConfirmed,
-                Roles = roles,
-                LockoutEnd = user.LockoutEnd,
-                IsLockedOut = user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow
-            });
-        }
-        return Ok(userDtos);
+        var users = await _userManagementService.GetAllUsersAsync();
+        return Ok(users);
     }
 
     // GET: api/usermanagement/users/{id}
     [HttpGet("users/{id}")]
     public async Task<IActionResult> GetUserById(string id)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _userManagementService.GetUserByIdAsync(id);
 
         if (user == null)
             return NotFound(new { message = "Usuario no encontrado" });
 
-        var roles = await _userManager.GetRolesAsync(user);
-
-        var userDto = new UserDto
-        {
-            Id = user.Id,
-            Username = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
-            EmailConfirmed = user.EmailConfirmed,
-            PhoneNumber = user.PhoneNumber,
-            Roles = roles,
-            LockoutEnd = user.LockoutEnd,
-            IsLockedOut = user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow
-        };
-        return Ok(userDto);
+        return Ok(user);
     }
 
     // POST: api/usermanagement/users
@@ -77,36 +43,12 @@ public class UserManagementController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var user = new IdentityUser
-        {
-            UserName = model.Username,
-            Email = model.Email,
-            EmailConfirmed = model.EmailConfirmed
-        };
+        var (success, userId, errors) = await _userManagementService.CreateUserAsync(model);
 
-        var result = await _userManager.CreateAsync(user, model.Password);
+        if (!success)
+            return BadRequest(new { errors });
 
-        if (!result.Succeeded)
-            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
-
-        // Asignar roles si se especificaron
-        if (model.Roles != null && model.Roles.Any())
-        {
-            foreach (var role in model.Roles)
-            {
-                if (await _roleManager.RoleExistsAsync(role))
-                {
-                    await _userManager.AddToRoleAsync(user, role);
-                }
-            }
-        }
-        else
-        {
-            // Rol por defecto
-            await _userManager.AddToRoleAsync(user, "User");
-        }
-
-        return Ok(new { message = "Usuario creado exitosamente", userId = user.Id });
+        return Ok(new { message = "Usuario creado exitosamente", userId });
     }
 
     // PUT: api/usermanagement/users/{id}
@@ -116,28 +58,10 @@ public class UserManagementController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var user = await _userManager.FindByIdAsync(id);
+        var (success, errors) = await _userManagementService.UpdateUserAsync(id, model);
 
-        if (user == null)
-            return NotFound(new { message = "Usuario no encontrado" });
-
-        // Actualizar información básica
-        if (!string.IsNullOrEmpty(model.Username))
-            user.UserName = model.Username;
-
-        if (!string.IsNullOrEmpty(model.Email))
-            user.Email = model.Email;
-
-        if (model.EmailConfirmed.HasValue)
-            user.EmailConfirmed = model.EmailConfirmed.Value;
-
-        if (!string.IsNullOrEmpty(model.PhoneNumber))
-            user.PhoneNumber = model.PhoneNumber;
-
-        var result = await _userManager.UpdateAsync(user);
-
-        if (!result.Succeeded)
-            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+        if (!success)
+            return BadRequest(new { errors });
 
         return Ok(new { message = "Usuario actualizado exitosamente" });
     }
@@ -146,20 +70,17 @@ public class UserManagementController : ControllerBase
     [HttpDelete("users/{id}")]
     public async Task<IActionResult> DeleteUser(string id)
     {
-        var user = await _userManager.FindByIdAsync(id);
-
-        if (user == null)
-            return NotFound(new { message = "Usuario no encontrado" });
-
-        // No permitir eliminar al propio admin
         var currentUserId = _userManager.GetUserId(User);
-        if (currentUserId == id)
-            return BadRequest(new { message = "No puedes eliminar tu propia cuenta" });
+        var (success, errors) = await _userManagementService.DeleteUserAsync(id, currentUserId!);
 
-        var result = await _userManager.DeleteAsync(user);
+        if (!success)
+        {
+            var errorMessage = errors?.FirstOrDefault() ?? "Error al eliminar usuario";
+            if (errorMessage.Contains("propia cuenta"))
+                return BadRequest(new { message = errorMessage });
 
-        if (!result.Succeeded)
-            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+            return NotFound(new { message = errorMessage });
+        }
 
         return Ok(new { message = "Usuario eliminado exitosamente" });
     }
@@ -168,62 +89,43 @@ public class UserManagementController : ControllerBase
     [HttpPost("users/{id}/roles")]
     public async Task<IActionResult> AssignRolesToUser(string id, [FromBody] AssignRolesRequest model)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var (success, assignedRoles, errors) = await _userManagementService.AssignRolesToUserAsync(id, model.Roles);
 
-        if (user == null)
-            return NotFound(new { message = "Usuario no encontrado" });
-
-        // Remover roles actuales
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        await _userManager.RemoveFromRolesAsync(user, currentRoles);
-
-        // Asignar nuevos roles
-        var validRoles = new List<string>();
-        foreach (var role in model.Roles)
+        if (!success)
         {
-            if (await _roleManager.RoleExistsAsync(role))
-            {
-                validRoles.Add(role);
-            }
+            var errorMessage = errors?.FirstOrDefault() ?? "Error al asignar roles";
+            if (errorMessage.Contains("no encontrado"))
+                return NotFound(new { message = errorMessage });
+
+            return BadRequest(new { errors });
         }
 
-        if (validRoles.Any())
-        {
-            var result = await _userManager.AddToRolesAsync(user, validRoles);
-
-            if (!result.Succeeded)
-                return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
-        }
-
-        return Ok(new { message = "Roles asignados exitosamente", roles = validRoles });
+        return Ok(new { message = "Roles asignados exitosamente", roles = assignedRoles });
     }
 
     // POST: api/usermanagement/users/{id}/lock
     [HttpPost("users/{id}/lock")]
     public async Task<IActionResult> LockUser(string id, [FromBody] LockUserModel model)
     {
-        var user = await _userManager.FindByIdAsync(id);
-
-        if (user == null)
-            return NotFound(new { message = "Usuario no encontrado" });
-
         var currentUserId = _userManager.GetUserId(User);
-        if (currentUserId == id)
-            return BadRequest(new { message = "No puedes bloquear tu propia cuenta" });
+        var (success, lockoutEnd, errors) = await _userManagementService.LockUserAsync(
+            id,
+            currentUserId!,
+            model.LockoutMinutes);
 
-        DateTimeOffset? lockoutEnd = model.LockoutMinutes.HasValue
-            ? DateTimeOffset.UtcNow.AddMinutes(model.LockoutMinutes.Value)
-            : DateTimeOffset.MaxValue; // Bloqueo permanente
+        if (!success)
+        {
+            var errorMessage = errors?.FirstOrDefault() ?? "Error al bloquear usuario";
+            if (errorMessage.Contains("propia cuenta"))
+                return BadRequest(new { message = errorMessage });
 
-        var result = await _userManager.SetLockoutEndDateAsync(user, lockoutEnd);
-
-        if (!result.Succeeded)
-            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+            return NotFound(new { message = errorMessage });
+        }
 
         return Ok(new
         {
             message = "Usuario bloqueado exitosamente",
-            lockoutEnd = lockoutEnd
+            lockoutEnd
         });
     }
 
@@ -231,15 +133,16 @@ public class UserManagementController : ControllerBase
     [HttpPost("users/{id}/unlock")]
     public async Task<IActionResult> UnlockUser(string id)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var (success, errors) = await _userManagementService.UnlockUserAsync(id);
 
-        if (user == null)
-            return NotFound(new { message = "Usuario no encontrado" });
+        if (!success)
+        {
+            var errorMessage = errors?.FirstOrDefault() ?? "Error al desbloquear usuario";
+            if (errorMessage.Contains("no encontrado"))
+                return NotFound(new { message = errorMessage });
 
-        var result = await _userManager.SetLockoutEndDateAsync(user, null);
-
-        if (!result.Succeeded)
-            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+            return BadRequest(new { errors });
+        }
 
         return Ok(new { message = "Usuario desbloqueado exitosamente" });
     }
@@ -248,21 +151,16 @@ public class UserManagementController : ControllerBase
     [HttpPost("users/{id}/reset-password")]
     public async Task<IActionResult> ResetPassword(string id, [FromBody] ResetPasswordModel model)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var (success, errors) = await _userManagementService.ResetPasswordAsync(id, model.NewPassword);
 
-        if (user == null)
-            return NotFound(new { message = "Usuario no encontrado" });
+        if (!success)
+        {
+            var errorMessage = errors?.FirstOrDefault() ?? "Error al restablecer contraseña";
+            if (errorMessage.Contains("no encontrado"))
+                return NotFound(new { message = errorMessage });
 
-        // Remover contraseña actual y establecer nueva
-        var removePasswordResult = await _userManager.RemovePasswordAsync(user);
-
-        if (!removePasswordResult.Succeeded)
-            return BadRequest(new { errors = removePasswordResult.Errors.Select(e => e.Description) });
-
-        var addPasswordResult = await _userManager.AddPasswordAsync(user, model.NewPassword);
-
-        if (!addPasswordResult.Succeeded)
-            return BadRequest(new { errors = addPasswordResult.Errors.Select(e => e.Description) });
+            return BadRequest(new { errors });
+        }
 
         return Ok(new { message = "Contraseña restablecida exitosamente" });
     }
@@ -271,44 +169,15 @@ public class UserManagementController : ControllerBase
     [HttpGet("roles")]
     public async Task<IActionResult> GetAllRoles()
     {
-        var roles = await _roleManager.Roles.AsNoTracking().ToListAsync();
-
-        return Ok(roles.Select(r => new RoleDto
-        {
-            Id = r.Id,
-            Name = r.Name ?? string.Empty
-        }));
+        var roles = await _userManagementService.GetAllRolesAsync();
+        return Ok(roles);
     }
 
     // GET: api/usermanagement/stats
     [HttpGet("stats")]
     public async Task<IActionResult> GetUserStats()
     {
-        var allUsers = await _userManager.Users.AsNoTracking().ToListAsync();
-        var totalUsers = allUsers.Count;
-
-        int adminCount = 0;
-        int userCount = 0;
-        int lockedCount = 0;
-
-        foreach (var user in allUsers)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-            if (roles.Contains("Admin")) adminCount++;
-            if (roles.Contains("User")) userCount++;
-
-            if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
-                lockedCount++;
-        }
-
-        var statsDto = new UserStatsDto
-        {
-            TotalUsers = totalUsers,
-            AdminCount = adminCount,
-            UserCount = userCount,
-            LockedUsers = lockedCount,
-            ActiveUsers = totalUsers - lockedCount
-        };
-        return Ok(statsDto);
+        var stats = await _userManagementService.GetUserStatsAsync();
+        return Ok(stats);
     }
 }
