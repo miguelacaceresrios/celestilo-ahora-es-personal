@@ -10,64 +10,119 @@ public class AuthService : IAuthService
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly JwtSettings _jwtSettings;
-    public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, JwtSettings jwtSettings)
+    private readonly ILogger<AuthService> _logger;
+    public AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, JwtSettings jwtSettings, ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _jwtSettings = jwtSettings;
+        _logger = logger;
+
     }
 
     public async Task<(bool Succeeded, AuthResponse? Response, IEnumerable<IdentityError>? Errors)> RegisterUserAsync(RegisterModel model)
     {
-        var user = new IdentityUser
+        var correlationId = Guid.NewGuid().ToString();
+        try
         {
-            UserName = model.UserName,
-            Email = model.Email
-        };
+            _logger.LogDebug("Starting registration - CorrelationId: {CorrelationId}", correlationId);
 
-        var result = await _userManager.CreateAsync(user, model.Password);
+            var user = new IdentityUser
+            {
+                UserName = model.UserName,
+                Email = model.Email
+            };
 
-        if (!result.Succeeded) return (false, null, result.Errors);
+            var result = await _userManager.CreateAsync(user, model.Password);
 
-        await _userManager.AddToRoleAsync(user, "User");
+            if (!result.Succeeded)
+            {
+                var errorCodes = string.Join(", ", result.Errors.Select(e => e.Code));
+                _logger.LogWarning("Failure to create user {UserName}. Errors: {ErrorCodes}, CorrelationId: {CorrelationId}", model.UserName, errorCodes, correlationId);
+                return (false, null, result.Errors);
+            }
 
-        var roles = await _userManager.GetRolesAsync(user);
+            await _userManager.AddToRoleAsync(user, "User");
 
-        var token = GenerateJwtToken(user, roles);
+            var roles = await _userManager.GetRolesAsync(user);
 
-        var response = new AuthResponse
+            var token = GenerateJwtToken(user, roles);
+
+            var response = new AuthResponse
+            {
+                Token = token,
+                Username = user.UserName!,
+                Email = user.Email!,
+                Roles = roles.ToList()
+            };
+            _logger.LogInformation("Registration successful. UserId: {UserId}, Roles: {RoleCount}, CorrelationId: {CorrelationId}", user.Id, roles.Count, correlationId);
+            return (true, response, null);
+        }
+        catch (Exception ex)
         {
-            Token = token,
-            Username = user.UserName!,
-            Email = user.Email!,
-            Roles = roles.ToList()
-        };
-
-        return (true, response, null);
+            _logger.LogCritical(ex, "Critical error during registration: {UserName}, CorrelationId: {CorrelationId}", model.UserName, correlationId);
+            var errors = new List<IdentityError>
+            {
+                new IdentityError
+                {
+                    Code  = "RegistrationError",
+                    Description = "An error occurred during registration. Please try again."
+                }
+            };
+            return (false, null, errors);
+        }
     }
 
     public async Task<(bool Succeeded, AuthResponse? Response)> LoginUserAsync(LoginModel model)
     {
-        var user = await _userManager.FindByEmailAsync(model.Email);
+        var correlationId = Guid.NewGuid().ToString();
 
-        if (user is null) return (false, null);
-
-        var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-
-        if (!result.Succeeded) return (false, null);
-
-        var roles = await _userManager.GetRolesAsync(user);
-        var token = GenerateJwtToken(user, roles);
-
-        var response = new AuthResponse
+        try
         {
-            Token = token,
-            Username = user.UserName!,
-            Email = user.Email!,
-            Roles = roles.ToList()
-        };
+            _logger.LogDebug("Starting login - CorrelationId: {CorrelationId}", correlationId);
 
-        return (true, response);
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user is null)
+            {
+                _logger.LogWarning("Login failed - CorrelationId: {CorrelationId}", correlationId);
+
+                // Delay artificial para prevenir timing attacks
+                await Task.Delay(Random.Shared.Next(100, 300));
+                return (false, null);
+            }
+
+            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false); // No lockout for simplicity in development
+
+            if (!result.Succeeded)
+            {
+                var reason = result.IsLockedOut ? "Lockout" : result.IsNotAllowed ? "NotAllowed" : "InvalidCredentials";
+
+                _logger.LogWarning("Login failed. Reason: {Reason}, UserId: {UserId}, CorrelationId: {CorrelationId}", reason, user.Id, correlationId);
+                await Task.Delay(Random.Shared.Next(100, 300));
+
+                return (false, null);
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = GenerateJwtToken(user, roles);
+
+            var response = new AuthResponse
+            {
+                Token = token,
+                Username = user.UserName!,
+                Email = user.Email!,
+                Roles = roles.ToList()
+            };
+
+            _logger.LogInformation("Login successful. UserId: {UserId}, Roles: {RoleCount}, CorrelationId: {CorrelationId}", user.Id, roles.Count, correlationId);
+
+            return (true, response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Critical error during login. CorrelationId: {CorrelationId}", correlationId);
+            return (false, null);
+        }
     }
     private string GenerateJwtToken(IdentityUser user, IList<string> roles)
     {

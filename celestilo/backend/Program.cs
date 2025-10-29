@@ -67,6 +67,8 @@ builder.Services.AddSingleton<JwtSettings>();
 
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
+builder.Services.AddLogging();
+
 
 var app = builder.Build();
 
