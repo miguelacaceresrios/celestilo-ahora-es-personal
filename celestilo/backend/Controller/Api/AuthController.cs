@@ -1,22 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 [Route("api/[controller]")]
 [ApiController]
-public class AuthController : ControllerBase
+public class AuthController(IAuthService authService) : ControllerBase
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
-    {
-        _authService = authService;
-    }
-
     // POST: api/auth/register
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var (succeeded, response, errors) = await _authService.RegisterUserAsync(model);
+        var (succeeded, response, errors) = await authService.RegisterUserAsync(model);
 
         if (!succeeded)
         {
@@ -32,7 +25,7 @@ public class AuthController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var (succeeded, response) = await _authService.LoginUserAsync(model);
+        var (succeeded, response) = await authService.LoginUserAsync(model);
 
         if (!succeeded) return Unauthorized(new { message = "Credenciales inválidas" });
 

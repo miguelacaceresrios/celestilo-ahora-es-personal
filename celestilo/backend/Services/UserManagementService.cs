@@ -1,27 +1,16 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Services;
-
-public class UserManagementService : IUserManagementService
+public class UserManagementService(UserManager<IdentityUser> userManager,RoleManager<IdentityRole> roleManager) : IUserManagementService
 {
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
-
-    public UserManagementService(UserManager<IdentityUser> userManager,RoleManager<IdentityRole> roleManager)
-    {
-        _userManager = userManager;
-        _roleManager = roleManager;
-    }
-
     public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
     {
-        var users = await _userManager.Users.AsNoTracking().ToListAsync();
+        var users = await userManager.Users.AsNoTracking().ToListAsync();
         var userDtos = new List<UserDto>();
 
         foreach (var user in users)
         {
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await userManager.GetRolesAsync(user);
             userDtos.Add(new UserDto
             {
                 Id = user.Id,
@@ -38,11 +27,11 @@ public class UserManagementService : IUserManagementService
 
     public async Task<UserDto?> GetUserByIdAsync(string id)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await userManager.FindByIdAsync(id);
         if (user == null)
             return null;
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await userManager.GetRolesAsync(user);
 
         return new UserDto
         {
@@ -66,7 +55,7 @@ public class UserManagementService : IUserManagementService
             EmailConfirmed = model.EmailConfirmed
         };
 
-        var result = await _userManager.CreateAsync(user, model.Password);
+        var result = await userManager.CreateAsync(user, model.Password);
 
         if (!result.Succeeded)
             return (false, null, result.Errors.Select(e => e.Description));
@@ -76,16 +65,16 @@ public class UserManagementService : IUserManagementService
         {
             foreach (var role in model.Roles)
             {
-                if (await _roleManager.RoleExistsAsync(role))
+                if (await roleManager.RoleExistsAsync(role))
                 {
-                    await _userManager.AddToRoleAsync(user, role);
+                    await userManager.AddToRoleAsync(user, role);
                 }
             }
         }
         else
         {
             // Rol por defecto
-            await _userManager.AddToRoleAsync(user, "User");
+            await userManager.AddToRoleAsync(user, "User");
         }
 
         return (true, user.Id, null);
@@ -93,7 +82,7 @@ public class UserManagementService : IUserManagementService
 
     public async Task<(bool Success, IEnumerable<string>? Errors)> UpdateUserAsync(string id, UpdateUserRequest model)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await userManager.FindByIdAsync(id);
         if (user == null)
             return (false, new[] { "Usuario no encontrado" });
 
@@ -110,7 +99,7 @@ public class UserManagementService : IUserManagementService
         if (!string.IsNullOrEmpty(model.PhoneNumber))
             user.PhoneNumber = model.PhoneNumber;
 
-        var result = await _userManager.UpdateAsync(user);
+        var result = await userManager.UpdateAsync(user);
 
         if (!result.Succeeded)
             return (false, result.Errors.Select(e => e.Description));
@@ -120,7 +109,7 @@ public class UserManagementService : IUserManagementService
 
     public async Task<(bool Success, IEnumerable<string>? Errors)> DeleteUserAsync(string id, string currentUserId)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await userManager.FindByIdAsync(id);
         if (user == null)
             return (false, new[] { "Usuario no encontrado" });
 
@@ -128,7 +117,7 @@ public class UserManagementService : IUserManagementService
         if (currentUserId == id)
             return (false, new[] { "No puedes eliminar tu propia cuenta" });
 
-        var result = await _userManager.DeleteAsync(user);
+        var result = await userManager.DeleteAsync(user);
 
         if (!result.Succeeded)
             return (false, result.Errors.Select(e => e.Description));
@@ -140,19 +129,19 @@ public class UserManagementService : IUserManagementService
         string id, 
         IEnumerable<string> roles)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await userManager.FindByIdAsync(id);
         if (user == null)
             return (false, Enumerable.Empty<string>(), new[] { "Usuario no encontrado" });
 
         // Remover roles actuales
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        await _userManager.RemoveFromRolesAsync(user, currentRoles);
+        var currentRoles = await userManager.GetRolesAsync(user);
+        await userManager.RemoveFromRolesAsync(user, currentRoles);
 
         // Asignar nuevos roles
         var validRoles = new List<string>();
         foreach (var role in roles)
         {
-            if (await _roleManager.RoleExistsAsync(role))
+            if (await roleManager.RoleExistsAsync(role))
             {
                 validRoles.Add(role);
             }
@@ -160,7 +149,7 @@ public class UserManagementService : IUserManagementService
 
         if (validRoles.Any())
         {
-            var result = await _userManager.AddToRolesAsync(user, validRoles);
+            var result = await userManager.AddToRolesAsync(user, validRoles);
 
             if (!result.Succeeded)
                 return (false, Enumerable.Empty<string>(), result.Errors.Select(e => e.Description));
@@ -174,7 +163,7 @@ public class UserManagementService : IUserManagementService
         string currentUserId, 
         int? lockoutMinutes)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await userManager.FindByIdAsync(id);
         if (user == null)
             return (false, null, new[] { "Usuario no encontrado" });
 
@@ -185,7 +174,7 @@ public class UserManagementService : IUserManagementService
             ? DateTimeOffset.UtcNow.AddMinutes(lockoutMinutes.Value)
             : DateTimeOffset.MaxValue; // Bloqueo permanente
 
-        var result = await _userManager.SetLockoutEndDateAsync(user, lockoutEnd);
+        var result = await userManager.SetLockoutEndDateAsync(user, lockoutEnd);
 
         if (!result.Succeeded)
             return (false, null, result.Errors.Select(e => e.Description));
@@ -195,11 +184,11 @@ public class UserManagementService : IUserManagementService
 
     public async Task<(bool Success, IEnumerable<string>? Errors)> UnlockUserAsync(string id)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await userManager.FindByIdAsync(id);
         if (user == null)
             return (false, new[] { "Usuario no encontrado" });
 
-        var result = await _userManager.SetLockoutEndDateAsync(user, null);
+        var result = await userManager.SetLockoutEndDateAsync(user, null);
 
         if (!result.Succeeded)
             return (false, result.Errors.Select(e => e.Description));
@@ -209,17 +198,17 @@ public class UserManagementService : IUserManagementService
 
     public async Task<(bool Success, IEnumerable<string>? Errors)> ResetPasswordAsync(string id, string newPassword)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await userManager.FindByIdAsync(id);
         if (user == null)
             return (false, new[] { "Usuario no encontrado" });
 
         // Remover contraseña actual y establecer nueva
-        var removePasswordResult = await _userManager.RemovePasswordAsync(user);
+        var removePasswordResult = await userManager.RemovePasswordAsync(user);
 
         if (!removePasswordResult.Succeeded)
             return (false, removePasswordResult.Errors.Select(e => e.Description));
 
-        var addPasswordResult = await _userManager.AddPasswordAsync(user, newPassword);
+        var addPasswordResult = await userManager.AddPasswordAsync(user, newPassword);
 
         if (!addPasswordResult.Succeeded)
             return (false, addPasswordResult.Errors.Select(e => e.Description));
@@ -229,7 +218,7 @@ public class UserManagementService : IUserManagementService
 
     public async Task<IEnumerable<RoleDto>> GetAllRolesAsync()
     {
-        var roles = await _roleManager.Roles.AsNoTracking().ToListAsync();
+        var roles = await roleManager.Roles.AsNoTracking().ToListAsync();
 
         return roles.Select(r => new RoleDto
         {
@@ -240,7 +229,7 @@ public class UserManagementService : IUserManagementService
 
     public async Task<UserStatsDto> GetUserStatsAsync()
     {
-        var allUsers = await _userManager.Users.AsNoTracking().ToListAsync();
+        var allUsers = await userManager.Users.AsNoTracking().ToListAsync();
         var totalUsers = allUsers.Count;
 
         int adminCount = 0;
@@ -249,7 +238,7 @@ public class UserManagementService : IUserManagementService
 
         foreach (var user in allUsers)
         {
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await userManager.GetRolesAsync(user);
             if (roles.Contains("Admin")) adminCount++;
             if (roles.Contains("User")) userCount++;
 

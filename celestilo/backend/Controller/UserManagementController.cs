@@ -5,22 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class UserManagementController : ControllerBase
+public class UserManagementController(IUserManagementService userManagementService, UserManager<IdentityUser> userManager) : ControllerBase
 {
-    private readonly IUserManagementService _userManagementService;
-    private readonly UserManager<IdentityUser> _userManager;
-
-    public UserManagementController(IUserManagementService userManagementService, UserManager<IdentityUser> userManager)
-    {
-        _userManagementService = userManagementService;
-        _userManager = userManager;
-    }
-
     // GET: api/usermanagement/users
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsers()
     {
-        var users = await _userManagementService.GetAllUsersAsync();
+        var users = await userManagementService.GetAllUsersAsync();
         return Ok(users);
     }
 
@@ -28,7 +19,7 @@ public class UserManagementController : ControllerBase
     [HttpGet("users/{id}")]
     public async Task<IActionResult> GetUserById(string id)
     {
-        var user = await _userManagementService.GetUserByIdAsync(id);
+        var user = await userManagementService.GetUserByIdAsync(id);
 
         if (user == null)
             return NotFound(new { message = "Usuario no encontrado" });
@@ -43,7 +34,7 @@ public class UserManagementController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var (success, userId, errors) = await _userManagementService.CreateUserAsync(model);
+        var (success, userId, errors) = await userManagementService.CreateUserAsync(model);
 
         if (!success)
             return BadRequest(new { errors });
@@ -58,7 +49,7 @@ public class UserManagementController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var (success, errors) = await _userManagementService.UpdateUserAsync(id, model);
+        var (success, errors) = await userManagementService.UpdateUserAsync(id, model);
 
         if (!success)
             return BadRequest(new { errors });
@@ -70,8 +61,8 @@ public class UserManagementController : ControllerBase
     [HttpDelete("users/{id}")]
     public async Task<IActionResult> DeleteUser(string id)
     {
-        var currentUserId = _userManager.GetUserId(User);
-        var (success, errors) = await _userManagementService.DeleteUserAsync(id, currentUserId!);
+        var currentUserId = userManager.GetUserId(User);
+        var (success, errors) = await userManagementService.DeleteUserAsync(id, currentUserId!);
 
         if (!success)
         {
@@ -89,7 +80,7 @@ public class UserManagementController : ControllerBase
     [HttpPost("users/{id}/roles")]
     public async Task<IActionResult> AssignRolesToUser(string id, [FromBody] AssignRolesRequest model)
     {
-        var (success, assignedRoles, errors) = await _userManagementService.AssignRolesToUserAsync(id, model.Roles);
+        var (success, assignedRoles, errors) = await userManagementService.AssignRolesToUserAsync(id, model.Roles);
 
         if (!success)
         {
@@ -107,8 +98,8 @@ public class UserManagementController : ControllerBase
     [HttpPost("users/{id}/lock")]
     public async Task<IActionResult> LockUser(string id, [FromBody] LockUserModel model)
     {
-        var currentUserId = _userManager.GetUserId(User);
-        var (success, lockoutEnd, errors) = await _userManagementService.LockUserAsync(
+        var currentUserId = userManager.GetUserId(User);
+        var (success, lockoutEnd, errors) = await userManagementService.LockUserAsync(
             id,
             currentUserId!,
             model.LockoutMinutes);
@@ -133,7 +124,7 @@ public class UserManagementController : ControllerBase
     [HttpPost("users/{id}/unlock")]
     public async Task<IActionResult> UnlockUser(string id)
     {
-        var (success, errors) = await _userManagementService.UnlockUserAsync(id);
+        var (success, errors) = await userManagementService.UnlockUserAsync(id);
 
         if (!success)
         {
@@ -151,7 +142,7 @@ public class UserManagementController : ControllerBase
     [HttpPost("users/{id}/reset-password")]
     public async Task<IActionResult> ResetPassword(string id, [FromBody] ResetPasswordModel model)
     {
-        var (success, errors) = await _userManagementService.ResetPasswordAsync(id, model.NewPassword);
+        var (success, errors) = await userManagementService.ResetPasswordAsync(id, model.NewPassword);
 
         if (!success)
         {
@@ -169,7 +160,7 @@ public class UserManagementController : ControllerBase
     [HttpGet("roles")]
     public async Task<IActionResult> GetAllRoles()
     {
-        var roles = await _userManagementService.GetAllRolesAsync();
+        var roles = await userManagementService.GetAllRolesAsync();
         return Ok(roles);
     }
 
@@ -177,7 +168,7 @@ public class UserManagementController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetUserStats()
     {
-        var stats = await _userManagementService.GetUserStatsAsync();
+        var stats = await userManagementService.GetUserStatsAsync();
         return Ok(stats);
     }
 }
