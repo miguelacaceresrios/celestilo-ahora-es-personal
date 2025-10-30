@@ -53,7 +53,7 @@ public class AuthService : IAuthService
                 Token = token,
                 Username = user.UserName!,
                 Email = user.Email!,
-                Roles = roles.ToList()
+                Roles = roles
             };
             _logger.LogInformation("Registration successful. UserId: {UserId}, Roles: {RoleCount}, CorrelationId: {CorrelationId}", user.Id, roles.Count, correlationId);
             return (true, response, null);
@@ -63,7 +63,7 @@ public class AuthService : IAuthService
             _logger.LogCritical(ex, "Critical error during registration: {UserName}, CorrelationId: {CorrelationId}", model.UserName, correlationId);
             var errors = new List<IdentityError>
             {
-                new IdentityError
+                new()
                 {
                     Code  = "RegistrationError",
                     Description = "An error occurred during registration. Please try again."
@@ -111,7 +111,7 @@ public class AuthService : IAuthService
                 Token = token,
                 Username = user.UserName!,
                 Email = user.Email!,
-                Roles = roles.ToList()
+                Roles = roles
             };
 
             _logger.LogInformation("Login successful. UserId: {UserId}, Roles: {RoleCount}, CorrelationId: {CorrelationId}", user.Id, roles.Count, correlationId);
