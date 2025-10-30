@@ -1,3 +1,6 @@
+using backend.DTOs;
+using backend.Model.Auth;
+namespace backend.Services;
 public interface IUserManagementService
 {
     Task<IEnumerable<UserDto>> GetAllUsersAsync();

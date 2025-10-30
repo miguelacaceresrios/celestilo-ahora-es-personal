@@ -1,4 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using backend.Services;
+using backend.Model.Auth;
+namespace backend.Controllers.Api;
+
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController(IAuthService authService) : ControllerBase

@@ -3,7 +3,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-
+using backend.Configuration;
+using backend.Model.Auth;
+namespace backend.Services;
 
 public class AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, JwtSettings jwtSettings, ILogger<AuthService> logger) : IAuthService
 {

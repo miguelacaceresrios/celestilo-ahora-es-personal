@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
-
+using backend.Data;
+using backend.Model;
+namespace backend.Controllers.Api;
 [ApiController]
 [Route("api/[controller]")]
 public class CrudController(ProductDbContext context) : Controller

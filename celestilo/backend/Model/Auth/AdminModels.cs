@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-
+namespace backend.Model.Auth;
 
     // Modelo para crear usuarios desde el panel admin
     public class CreateUserRequest

@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-
+namespace backend.Model.Auth;
 
 public class LoginModel
 {

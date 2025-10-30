@@ -1,4 +1,4 @@
-
+namespace backend.Model.Auth;
 public class AuthResponse
 {
     public string Token { get; set; } = string.Empty;

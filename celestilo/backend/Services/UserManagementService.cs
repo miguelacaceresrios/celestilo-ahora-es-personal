@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
+using backend.DTOs;
+using backend.Model.Auth;
+namespace backend.Services;
 public class UserManagementService(UserManager<IdentityUser> userManager,RoleManager<IdentityRole> roleManager) : IUserManagementService
 {
     public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
