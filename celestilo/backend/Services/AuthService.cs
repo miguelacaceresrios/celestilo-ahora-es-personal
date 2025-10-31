@@ -68,15 +68,27 @@ public class AuthService(UserManager<IdentityUser> userManager, SignInManager<Id
 
         try
         {
+            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+            {
+
+                logger.LogWarning("Login attempt with empty credentials - CorrelationId: {CorrelationId}", correlationId);
+
+                await Task.Delay(Random.Shared.Next(100, 300));
+
+                return (false, null);
+            }
+
+
             logger.LogDebug("Starting login - CorrelationId: {CorrelationId}", correlationId);
 
             var user = await userManager.FindByEmailAsync(model.Email);
+
             if (user is null)
             {
-                logger.LogWarning("Login failed - CorrelationId: {CorrelationId}", correlationId);
+                logger.LogWarning("Login attempt for non-existent email - CorrelationId: {CorrelationId}", correlationId);
 
-                // Delay artificial para prevenir timing attacks
                 await Task.Delay(Random.Shared.Next(100, 300));
+
                 return (false, null);
             }
 
@@ -110,6 +122,7 @@ public class AuthService(UserManager<IdentityUser> userManager, SignInManager<Id
         catch (Exception ex)
         {
             logger.LogCritical(ex, "Critical error during login. CorrelationId: {CorrelationId}", correlationId);
+            await Task.Delay(Random.Shared.Next(100, 300));
             return (false, null);
         }
     }
