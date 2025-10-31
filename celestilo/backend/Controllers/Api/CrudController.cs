@@ -4,59 +4,163 @@ using Microsoft.AspNetCore.Authorization;
 using backend.Data;
 using backend.Model;
 namespace backend.Controllers.Api;
+
 [ApiController]
+[Authorize(Roles = "Admin")]
 [Route("api/[controller]")]
-public class CrudController(ProductDbContext context) : Controller
+public class CrudController(ProductDbContext context, ILogger<CrudController> logger) : ControllerBase
 {
     //Get: api/crud
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetProducts()
     {
-        var products = await context.Products.ToListAsync();
+        var correlationId = Guid.NewGuid().ToString();
 
-        return Ok(products);
+        logger.LogInformation("[{CorrelationId}] Fetching all products", correlationId);
+
+        try
+        {
+            var products = await context.Products.ToListAsync();
+
+            logger.LogInformation("[{CorrelationId}] Successfully retrieved {ProductCount} products", correlationId, products.Count);
+
+            return Ok(products);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Failed to retrieve products", correlationId);
+
+            return StatusCode(500, new { error = "An error occurred while retrieving products" });
+        }
     }
-    // Solo los usuarios con rol "Admin" pueden agregar productos
+    // Post: api/crud
     [HttpPost]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AddProduct([FromBody] Product product)
     {
-        await context.Products.AddAsync(product);
+        var correlationId = Guid.NewGuid().ToString();
 
-        await context.SaveChangesAsync();
+        logger.LogInformation("[{CorrelationId}] Received request to create new product: {ProductName}", correlationId, product.Name ?? "null");
 
-        return Ok(product);
+        if (!ModelState.IsValid)
+        {
+            logger.LogWarning("[{CorrelationId}] Product creation failed due to invalid model state", correlationId);
+
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            await context.Products.AddAsync(product);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("[{CorrelationId}] Product created successfully with ID: {ProductId}", correlationId, product.Id);
+
+            return CreatedAtAction(nameof(GetProducts), product);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Database error while creating product: {ProductName}", correlationId, product.Name);
+            return StatusCode(500, new { error = "A database error occurred while creating the product" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Unexpected error while creating product", correlationId);
+            return StatusCode(500, new { error = "An unexpected error occurred while creating the product" });
+
+        }
     }
+    // Put: api/crud/{id}
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product updatedProduct)
     {
+        var correlationId = Guid.NewGuid().ToString();
 
-        if (updatedProduct == null || id != updatedProduct.Id) return BadRequest("Invalid product data");
+        logger.LogInformation("[{CorrelationId}] Received request to update product with ID: {ProductId}", correlationId, id);
+        if (updatedProduct is null || id != updatedProduct.Id)
+        {
+            logger.LogWarning("[{CorrelationId}] Product update failed: ID mismatch. Route ID: {RouteId}, Body ID: {BodyId}", correlationId, id, updatedProduct?.Id ?? 0);
+            return BadRequest(new { error = "Product ID mismatch" });
+        }
 
-        var exists = await context.Products.AnyAsync(p => p.Id == id);
+        if (!ModelState.IsValid)
+        {
+            logger.LogWarning("[{CorrelationId}] Product update failed due to invalid model state for ID: {ProductId}", correlationId, id);
+            return BadRequest(ModelState);
+        }
 
-        if (!exists) return NotFound();
+        try
+        {
+            var existingProduct = await context.Products.FindAsync(id);
 
-        context.Products.Update(updatedProduct);
+            if (existingProduct is null)
+            {
+                logger.LogWarning("[{CorrelationId}] Product update failed: Product not found with ID: {ProductId}", correlationId, id);
+                return NotFound(new { error = $"Product with ID {id} not found" });
+            }
 
-        await context.SaveChangesAsync();
-        return Ok(updatedProduct);
+            context.Entry(existingProduct).CurrentValues.SetValues(updatedProduct);
+            await context.SaveChangesAsync();
 
+
+            logger.LogInformation("[{CorrelationId}] Product with ID: {ProductId} updated successfully", correlationId, id);
+            return Ok(existingProduct);
+
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Concurrency error while updating product with ID: {ProductId}", correlationId, id);
+            return StatusCode(409, new { error = "The product was modified by another user. Please refresh and try again" });
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Database error while updating product with ID: {ProductId}", correlationId, id);
+            return StatusCode(500, new { error = "A database error occurred while updating the product" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Unexpected error while updating product with ID: {ProductId}", correlationId, id);
+            return StatusCode(500, new { error = "An unexpected error occurred while updating the product" });
+        }
 
     }
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
-        var product = await context.Products.FindAsync(id);
+        var correlationId = Guid.NewGuid().ToString();
 
-        if (product is null) return NotFound();
+        logger.LogInformation("[{CorrelationId}] Received request to delete product with ID: {ProductId}", correlationId, id);
 
-        context.Products.Remove(product);
+        try
+        {
+            var product = await context.Products.FindAsync(id);
 
-        await context.SaveChangesAsync();
+            if (product is null)
+            {
+                logger.LogWarning("[{CorrelationId}] Product deletion failed: Product not found with ID: {ProductId}", correlationId, id);
+                return NotFound(new { error = $"Product with ID {id} not found" });
+            }
 
-        return Ok();
+            context.Products.Remove(product);
+
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("[{CorrelationId}] Producto con ID: {Id} eliminado exitosamente", correlationId, id);
+
+
+            logger.LogInformation("[{CorrelationId}] Product with ID: {ProductId} deleted successfully", correlationId, id);
+
+            return NoContent();
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Database error while deleting product with ID: {ProductId}",correlationId, id);
+            return StatusCode(500, new { error = "A database error occurred while deleting the product" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[{CorrelationId}] Unexpected error while deleting product with ID: {ProductId}",correlationId, id);
+            return StatusCode(500, new { error = "An unexpected error occurred while deleting the product" });
+        }
     }
 }
