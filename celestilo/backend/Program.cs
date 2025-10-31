@@ -64,9 +64,11 @@ builder.Services.AddControllers();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services.AddSingleton<JwtSettings>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+
+builder.Services.AddSingleton<JwtSettings>();
 
 builder.Services.AddLogging();
 
