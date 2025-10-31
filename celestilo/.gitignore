@@ -1,0 +1,19 @@
+# VS Code
+.vscode/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Dependencies
+node_modules/
