@@ -3,8 +3,18 @@ using backend.Data;
 using backend.DTOs;
 using backend.Model;
 namespace backend.Services;
+
+/// <summary>
+/// Service implementation for managing product operations including CRUD operations.
+/// Provides logging and error handling for all product-related database operations.
+/// </summary>
 public class ProductService(ProductDbContext context, ILogger<ProductService> logger) : IProductService
 {
+    /// <summary>
+    /// Retrieves all products from the database.
+    /// Uses AsNoTracking() for read-only query optimization.
+    /// </summary>
+    /// <returns>A collection of <see cref="ProductDto"/> objects representing all products.</returns>
     public async Task<IEnumerable<ProductDto>> GetProductsAsync()
     {
         var correlationId = Guid.NewGuid().ToString();
@@ -26,6 +36,14 @@ public class ProductService(ProductDbContext context, ILogger<ProductService> lo
         }
     }
 
+    /// <summary>
+    /// Retrieves a specific product by its unique identifier.
+    /// Uses AsNoTracking() for read-only query optimization.
+    /// </summary>
+    /// <param name="id">The unique identifier of the product.</param>
+    /// <returns>
+    /// The <see cref="ProductDto"/> object if found, otherwise null.
+    /// </returns>
     public async Task<ProductDto?> GetProductByIdAsync(int id)
     {
         var correlationId = Guid.NewGuid().ToString();
@@ -52,6 +70,17 @@ public class ProductService(ProductDbContext context, ILogger<ProductService> lo
             return null;
         }
     }
+
+    /// <summary>
+    /// Creates a new product in the database.
+    /// Automatically sets the registration date to the current date and time.
+    /// </summary>
+    /// <param name="productDto">The product data transfer object containing product information.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - The created <see cref="ProductDto"/> object if successful, otherwise null.
+    /// - A boolean indicating if the operation succeeded.
+    /// </returns>
     public async Task<(ProductDto?, bool Success)> AddProductAsync(CreateProductDto productDto)
     {
         var correlationId = Guid.NewGuid().ToString();
@@ -96,15 +125,27 @@ public class ProductService(ProductDbContext context, ILogger<ProductService> lo
 
         }
     }
+
+    /// <summary>
+    /// Updates an existing product in the database.
+    /// Handles concurrency exceptions and database update errors.
+    /// </summary>
+    /// <param name="id">The unique identifier of the product to update.</param>
+    /// <param name="productDto">The product data transfer object containing updated product information.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - The updated <see cref="ProductDto"/> object if successful, otherwise null.
+    /// - A boolean indicating if the operation succeeded.
+    /// </returns>
     public async Task<(ProductDto?, bool Success)> UpdateProductAsync(int id, UpdateProductDto productDto)
     {
         var correlationId = Guid.NewGuid().ToString();
 
         logger.LogInformation("[{CorrelationId}] Received request to update product with ID: {ProductId}", correlationId, id);
 
-        if (productDto is null || id != productDto.Id)
+        if (productDto is null)
         {
-            logger.LogWarning("[{CorrelationId}] Product update failed: ID mismatch or null product. Route ID: {RouteId}, Body ID: {BodyId}", correlationId, id, productDto?.Id ?? 0);
+            logger.LogWarning("[{CorrelationId}] Product update failed: null product. Route ID: {RouteId}", correlationId, id);
             return (null, false);
         }
 
@@ -147,6 +188,14 @@ public class ProductService(ProductDbContext context, ILogger<ProductService> lo
             return (null, false);
         }
     }
+
+    /// <summary>
+    /// Deletes a product from the database by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier of the product to delete.</param>
+    /// <returns>
+    /// True if the product was successfully deleted, otherwise false.
+    /// </returns>
     public async Task<bool> DeleteProductAsync(int id)
     {
         var correlationId = Guid.NewGuid().ToString();
@@ -184,6 +233,11 @@ public class ProductService(ProductDbContext context, ILogger<ProductService> lo
 
     }
 
+    /// <summary>
+    /// Maps a <see cref="Product"/> entity to a <see cref="ProductDto"/> data transfer object.
+    /// </summary>
+    /// <param name="product">The product entity to map.</param>
+    /// <returns>A <see cref="ProductDto"/> object containing the product information.</returns>
     private static ProductDto MapToDto(Product product)
     {
         return new ProductDto

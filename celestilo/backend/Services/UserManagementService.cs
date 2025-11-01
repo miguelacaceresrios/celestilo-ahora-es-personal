@@ -3,8 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Model.Auth;
 namespace backend.Services;
+
+/// <summary>
+/// Service implementation for managing user accounts, roles, and user-related operations.
+/// Provides comprehensive user management functionality including CRUD operations, role assignment,
+/// account locking/unlocking, and password management.
+/// </summary>
 public class UserManagementService(UserManager<IdentityUser> userManager,RoleManager<IdentityRole> roleManager) : IUserManagementService
 {
+    /// <summary>
+    /// Retrieves all users from the system with their associated roles and lockout status.
+    /// Uses AsNoTracking() for read-only query optimization.
+    /// </summary>
+    /// <returns>A collection of <see cref="UserDto"/> objects representing all users.</returns>
     public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
     {
         var users = await userManager.Users.AsNoTracking().ToListAsync();
@@ -27,6 +38,13 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return userDtos;
     }
 
+    /// <summary>
+    /// Retrieves a specific user by their unique identifier with their associated roles and lockout status.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user.</param>
+    /// <returns>
+    /// The <see cref="UserDto"/> object if found, otherwise null.
+    /// </returns>
     public async Task<UserDto?> GetUserByIdAsync(string id)
     {
         var user = await userManager.FindByIdAsync(id);
@@ -48,6 +66,17 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         };
     }
 
+    /// <summary>
+    /// Creates a new user account in the system.
+    /// Assigns specified roles if provided, otherwise assigns the default "User" role.
+    /// </summary>
+    /// <param name="model">The user creation model containing username, email, password, and optional roles.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the operation succeeded.
+    /// - The created user's ID if successful, otherwise null.
+    /// - A collection of error messages if the operation failed, otherwise null.
+    /// </returns>
     public async Task<(bool Success, string? UserId, IEnumerable<string>? Errors)> CreateUserAsync(CreateUserRequest model)
     {
         var user = new IdentityUser
@@ -82,6 +111,17 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return (true, user.Id, null);
     }
 
+    /// <summary>
+    /// Updates an existing user's information.
+    /// Only updates fields that are provided in the model (non-null values).
+    /// </summary>
+    /// <param name="id">The unique identifier of the user to update.</param>
+    /// <param name="model">The user update model containing the fields to update.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the operation succeeded.
+    /// - A collection of error messages if the operation failed, otherwise null.
+    /// </returns>
     public async Task<(bool Success, IEnumerable<string>? Errors)> UpdateUserAsync(string id, UpdateUserRequest model)
     {
         var user = await userManager.FindByIdAsync(id);
@@ -109,6 +149,17 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return (true, null);
     }
 
+    /// <summary>
+    /// Deletes a user account from the system.
+    /// Prevents users from deleting their own account for security reasons.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user to delete.</param>
+    /// <param name="currentUserId">The unique identifier of the currently authenticated user.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the operation succeeded.
+    /// - A collection of error messages if the operation failed, otherwise null.
+    /// </returns>
     public async Task<(bool Success, IEnumerable<string>? Errors)> DeleteUserAsync(string id, string currentUserId)
     {
         var user = await userManager.FindByIdAsync(id);
@@ -127,6 +178,18 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return (true, null);
     }
 
+    /// <summary>
+    /// Assigns roles to a user. Replaces all existing roles with the new ones.
+    /// Only assigns roles that exist in the system.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user.</param>
+    /// <param name="roles">The collection of role names to assign to the user.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the operation succeeded.
+    /// - A collection of successfully assigned role names.
+    /// - A collection of error messages if the operation failed, otherwise null.
+    /// </returns>
     public async Task<(bool Success, IEnumerable<string> AssignedRoles, IEnumerable<string>? Errors)> AssignRolesToUserAsync(
         string id, 
         IEnumerable<string> roles)
@@ -160,6 +223,19 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return (true, validRoles, null);
     }
 
+    /// <summary>
+    /// Locks a user account, preventing login. Supports both temporary and permanent lockouts.
+    /// Prevents users from locking their own account for security reasons.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user to lock.</param>
+    /// <param name="currentUserId">The unique identifier of the currently authenticated user.</param>
+    /// <param name="lockoutMinutes">The number of minutes to lock the user (null for permanent lock).</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the operation succeeded.
+    /// - The lockout end date if successful, otherwise null.
+    /// - A collection of error messages if the operation failed, otherwise null.
+    /// </returns>
     public async Task<(bool Success, DateTimeOffset? LockoutEnd, IEnumerable<string>? Errors)> LockUserAsync(
         string id, 
         string currentUserId, 
@@ -184,6 +260,15 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return (true, lockoutEnd, null);
     }
 
+    /// <summary>
+    /// Unlocks a previously locked user account, allowing login again.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user to unlock.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the operation succeeded.
+    /// - A collection of error messages if the operation failed, otherwise null.
+    /// </returns>
     public async Task<(bool Success, IEnumerable<string>? Errors)> UnlockUserAsync(string id)
     {
         var user = await userManager.FindByIdAsync(id);
@@ -198,6 +283,17 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return (true, null);
     }
 
+    /// <summary>
+    /// Resets a user's password to a new value.
+    /// Removes the old password and sets the new one.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user whose password should be reset.</param>
+    /// <param name="newPassword">The new password for the user.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the operation succeeded.
+    /// - A collection of error messages if the operation failed, otherwise null.
+    /// </returns>
     public async Task<(bool Success, IEnumerable<string>? Errors)> ResetPasswordAsync(string id, string newPassword)
     {
         var user = await userManager.FindByIdAsync(id);
@@ -218,6 +314,11 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         return (true, null);
     }
 
+    /// <summary>
+    /// Retrieves all available roles in the system.
+    /// Uses AsNoTracking() for read-only query optimization.
+    /// </summary>
+    /// <returns>A collection of <see cref="RoleDto"/> objects representing all roles.</returns>
     public async Task<IEnumerable<RoleDto>> GetAllRolesAsync()
     {
         var roles = await roleManager.Roles.AsNoTracking().ToListAsync();
@@ -229,6 +330,11 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         });
     }
 
+    /// <summary>
+    /// Retrieves user statistics including total users, admin count, user count, and lockout information.
+    /// Uses AsNoTracking() for read-only query optimization.
+    /// </summary>
+    /// <returns>A <see cref="UserStatsDto"/> object containing user statistics.</returns>
     public async Task<UserStatsDto> GetUserStatsAsync()
     {
         var allUsers = await userManager.Users.AsNoTracking().ToListAsync();

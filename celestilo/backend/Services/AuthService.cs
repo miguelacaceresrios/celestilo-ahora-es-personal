@@ -7,8 +7,23 @@ using backend.Configuration;
 using backend.Model.Auth;
 namespace backend.Services;
 
+/// <summary>
+/// Service implementation for handling authentication operations including user registration and login.
+/// Provides JWT token generation and user authentication functionality.
+/// </summary>
 public class AuthService(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, JwtSettings jwtSettings, ILogger<AuthService> logger) : IAuthService
 {
+    /// <summary>
+    /// Registers a new user in the system and generates a JWT token.
+    /// Automatically assigns the "User" role to newly registered users.
+    /// </summary>
+    /// <param name="model">The registration model containing username, email, and password.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the registration succeeded.
+    /// - An <see cref="AuthResponse"/> object with JWT token and user information if successful, otherwise null.
+    /// - A collection of <see cref="IdentityError"/> objects if registration failed, otherwise null.
+    /// </returns>
     public async Task<(bool Succeeded, AuthResponse? Response, IEnumerable<IdentityError>? Errors)> RegisterUserAsync(RegisterModel model)
     {
         var correlationId = Guid.NewGuid().ToString();
@@ -62,6 +77,16 @@ public class AuthService(UserManager<IdentityUser> userManager, SignInManager<Id
         }
     }
 
+    /// <summary>
+    /// Authenticates a user with their email and password, and generates a JWT token upon successful authentication.
+    /// Includes security measures such as timing delays for failed login attempts.
+    /// </summary>
+    /// <param name="model">The login model containing email and password.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - A boolean indicating if the login succeeded.
+    /// - An <see cref="AuthResponse"/> object with JWT token and user information if successful, otherwise null.
+    /// </returns>
     public async Task<(bool Succeeded, AuthResponse? Response)> LoginUserAsync(LoginModel model)
     {
         var correlationId = Guid.NewGuid().ToString();
@@ -126,6 +151,13 @@ public class AuthService(UserManager<IdentityUser> userManager, SignInManager<Id
             return (false, null);
         }
     }
+
+    /// <summary>
+    /// Generates a JWT token for the specified user with their assigned roles.
+    /// </summary>
+    /// <param name="user">The identity user for whom the token is generated.</param>
+    /// <param name="roles">The collection of role names assigned to the user.</param>
+    /// <returns>A JWT token string.</returns>
     private string GenerateJwtToken(IdentityUser user, IList<string> roles)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey));

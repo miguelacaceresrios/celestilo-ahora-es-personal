@@ -3,11 +3,22 @@ using backend.Services;
 using backend.Model.Auth;
 namespace backend.Controllers.Api;
 
+/// <summary>
+/// Controller responsible for handling authentication operations such as user registration and login.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController(IAuthService authService) : ControllerBase
 {
-    // POST: api/auth/register
+    /// <summary>
+    /// Registers a new user in the system.
+    /// </summary>
+    /// <param name="model">The registration model containing username, email, and password.</param>
+    /// <returns>
+    /// Returns an <see cref="IActionResult"/> with:
+    /// - 400 BadRequest if the model state is invalid or registration fails.
+    /// - 200 OK with an <see cref="AuthResponse"/> containing the JWT token and user information upon successful registration.
+    /// </returns>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
     {
@@ -23,7 +34,16 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(response);
     }
 
-    // POST: api/auth/login
+    /// <summary>
+    /// Authenticates a user and returns a JWT token.
+    /// </summary>
+    /// <param name="model">The login model containing email and password.</param>
+    /// <returns>
+    /// Returns an <see cref="IActionResult"/> with:
+    /// - 400 BadRequest if the model state is invalid.
+    /// - 401 Unauthorized if the credentials are invalid.
+    /// - 200 OK with an <see cref="AuthResponse"/> containing the JWT token and user information upon successful authentication.
+    /// </returns>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
