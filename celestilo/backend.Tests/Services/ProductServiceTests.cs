@@ -190,8 +190,7 @@ public class ProductServiceTests
     [InlineData("Laptop", 1000, 5)]
     [InlineData("Mouse", 25, 10)]
     [InlineData("Mechanical Keyboard", 150, 3)]
-    public async Task AddProductAsync_WithDifferentData_ShouldCreateCorrectly(
-        string name, decimal price, int stock)
+    public async Task AddProductAsync_WithDifferentData_ShouldCreateCorrectly(string name, decimal price, int stock)
     {
         // Arrange: Set up service and prepare product data with test parameters
         using var context = CreateInMemoryContext();
