@@ -1,6 +1,6 @@
 using backend.DTOs;
 using backend.Model.Auth;
-namespace backend.Services;
+namespace backend.Services.Interfaces;
 
 /// <summary>
 /// Interface defining user management service operations for managing users, roles, and user-related operations.
@@ -32,7 +32,7 @@ public interface IUserManagementService
     /// - The created user's ID if successful, otherwise null.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    Task<(bool Success, string? UserId, IEnumerable<string>? Errors)> CreateUserAsync(CreateUserRequest model);
+    Task<(bool success, string? userId, IEnumerable<string>? errors)> CreateUserAsync(CreateUserRequest model);
     
     /// <summary>
     /// Updates an existing user's information.
@@ -44,7 +44,7 @@ public interface IUserManagementService
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    Task<(bool Success, IEnumerable<string>? Errors)> UpdateUserAsync(string id, UpdateUserRequest model);
+    Task<(bool success, IEnumerable<string>? errors)> UpdateUserAsync(string id, UpdateUserRequest model);
     
     /// <summary>
     /// Deletes a user account from the system.
@@ -57,7 +57,7 @@ public interface IUserManagementService
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    Task<(bool Success, IEnumerable<string>? Errors)> DeleteUserAsync(string id, string currentUserId);
+    Task<(bool success, IEnumerable<string>? errors)> DeleteUserAsync(string id, string currentUserId);
     
     /// <summary>
     /// Assigns roles to a user. Existing roles are replaced with the new ones.
@@ -70,7 +70,7 @@ public interface IUserManagementService
     /// - A collection of successfully assigned role names.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    Task<(bool Success, IEnumerable<string> AssignedRoles, IEnumerable<string>? Errors)> AssignRolesToUserAsync(string id, IEnumerable<string> roles);
+    Task<(bool success, IEnumerable<string> assignedRoles, IEnumerable<string>? Errors)> AssignRolesToUserAsync(string id, IEnumerable<string> roles);
     
     /// <summary>
     /// Locks a user account, preventing login. Can be temporary or permanent.
@@ -85,7 +85,7 @@ public interface IUserManagementService
     /// - The lockout end date if successful, otherwise null.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    Task<(bool Success, DateTimeOffset? LockoutEnd, IEnumerable<string>? Errors)> LockUserAsync(string id, string currentUserId, int? lockoutMinutes);
+    Task<(bool success, DateTimeOffset? lockoutEnd, IEnumerable<string>? errors)> LockUserAsync(string id, string currentUserId, int? lockoutMinutes);
     
     /// <summary>
     /// Unlocks a previously locked user account, allowing login again.
@@ -96,7 +96,7 @@ public interface IUserManagementService
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    Task<(bool Success, IEnumerable<string>? Errors)> UnlockUserAsync(string id);
+    Task<(bool success, IEnumerable<string>? errors)> UnlockUserAsync(string id);
     
     /// <summary>
     /// Resets a user's password to a new value.
@@ -108,7 +108,7 @@ public interface IUserManagementService
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    Task<(bool Success, IEnumerable<string>? Errors)> ResetPasswordAsync(string id, string newPassword);
+    Task<(bool success, IEnumerable<string>? errors)> ResetPasswordAsync(string id, string newPassword);
     
     /// <summary>
     /// Retrieves all available roles in the system.

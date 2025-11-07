@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using backend.Model.Auth;
-namespace backend.Services;
+namespace backend.Services.Interfaces;
 
 /// <summary>
 /// Interface defining authentication service operations for user registration and login.
@@ -17,7 +17,7 @@ public interface IAuthService
     /// - An <see cref="AuthResponse"/> object with JWT token and user information if successful, otherwise null.
     /// - A collection of <see cref="IdentityError"/> objects if registration failed, otherwise null.
     /// </returns>
-    Task<(bool Succeeded, AuthResponse? Response, IEnumerable<IdentityError>? Errors)> RegisterUserAsync(RegisterModel model);
+    Task<(bool succeeded, AuthResponse? response, IEnumerable<IdentityError>? Errors)> RegisterUserAsync(RegisterModel model);
     
     /// <summary>
     /// Authenticates a user and generates a JWT token.
@@ -28,5 +28,5 @@ public interface IAuthService
     /// - A boolean indicating if the login succeeded.
     /// - An <see cref="AuthResponse"/> object with JWT token and user information if successful, otherwise null.
     /// </returns>
-    Task<(bool Succeeded, AuthResponse? Response)> LoginUserAsync(LoginModel model);
+    Task<(bool succeeded, AuthResponse? response)> LoginUserAsync(LoginModel model);
 }

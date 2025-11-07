@@ -1,5 +1,5 @@
 using backend.DTOs;
-namespace backend.Services;
+namespace backend.Services.Interfaces;
 
 /// <summary>
 /// Interface defining product service operations for managing products.
@@ -30,7 +30,7 @@ public interface IProductService
     /// - The created <see cref="ProductDto"/> object if successful, otherwise null.
     /// - A boolean indicating if the operation succeeded.
     /// </returns>
-    Task<(ProductDto?, bool Success)> AddProductAsync(CreateProductDto product);
+    Task<(ProductDto?, bool success)> AddProductAsync(CreateProductDto product);
     
     /// <summary>
     /// Updates an existing product in the system.
@@ -42,7 +42,7 @@ public interface IProductService
     /// - The updated <see cref="ProductDto"/> object if successful, otherwise null.
     /// - A boolean indicating if the operation succeeded.
     /// </returns>
-    Task<(ProductDto?, bool Success)> UpdateProductAsync(int id, UpdateProductDto updatedProduct);
+    Task<(ProductDto?, bool success)> UpdateProductAsync(int id, UpdateProductDto updatedProduct);
     
     /// <summary>
     /// Deletes a product from the system.
