@@ -51,7 +51,7 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         var (succeeded, response) = await authService.LoginUserAsync(model);
 
-        if (!succeeded) return Unauthorized(new { message = "Credenciales inválidas" });
+        if (!succeeded) return Unauthorized(new { message = "Invalid credentials" });
 
         return Ok(response);
     }

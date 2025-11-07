@@ -92,7 +92,6 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         if (!result.Succeeded)
             return (false, null, result.Errors.Select(e => e.Description));
 
-        // Asignar roles si se especificaron
         if (model.Roles != null && model.Roles.Any())
         {
             foreach (var role in model.Roles)
@@ -105,7 +104,6 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
         }
         else
         {
-            // Rol por defecto
             await userManager.AddToRoleAsync(user, "User");
         }
 
@@ -127,9 +125,8 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
-            return (false, new[] { "Usuario no encontrado" });
+            return (false, new[] { "User not found" });
 
-        // Actualizar información básica
         if (!string.IsNullOrEmpty(model.Username))
             user.UserName = model.Username;
 
@@ -165,11 +162,10 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
-            return (false, new[] { "Usuario no encontrado" });
+            return (false, new[] { "User not found" });
 
-        // No permitir eliminar al propio admin
         if (currentUserId == id)
-            return (false, new[] { "No puedes eliminar tu propia cuenta" });
+            return (false, new[] { "Cannot delete your own account" });
 
         var result = await userManager.DeleteAsync(user);
 
@@ -197,13 +193,10 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
-            return (false, Enumerable.Empty<string>(), new[] { "Usuario no encontrado" });
+            return (false, Enumerable.Empty<string>(), new[] { "User not found" });
 
-        // Remover roles actuales
         var currentRoles = await userManager.GetRolesAsync(user);
         await userManager.RemoveFromRolesAsync(user, currentRoles);
-
-        // Asignar nuevos roles
         var validRoles = new List<string>();
         foreach (var role in roles)
         {
@@ -244,14 +237,14 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
-            return (false, null, new[] { "Usuario no encontrado" });
+            return (false, null, new[] { "User not found" });
 
         if (currentUserId == id)
-            return (false, null, new[] { "No puedes bloquear tu propia cuenta" });
+            return (false, null, new[] { "Cannot lock your own account" });
 
         DateTimeOffset? lockoutEnd = lockoutMinutes.HasValue
             ? DateTimeOffset.UtcNow.AddMinutes(lockoutMinutes.Value)
-            : DateTimeOffset.MaxValue; // Bloqueo permanente
+            : DateTimeOffset.MaxValue;
 
         var result = await userManager.SetLockoutEndDateAsync(user, lockoutEnd);
 
@@ -274,7 +267,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
-            return (false, new[] { "Usuario no encontrado" });
+            return (false, new[] { "User not found" });
 
         var result = await userManager.SetLockoutEndDateAsync(user, null);
 
@@ -299,9 +292,8 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
-            return (false, new[] { "Usuario no encontrado" });
+            return (false, new[] { "User not found" });
 
-        // Remover contraseña actual y establecer nueva
         var removePasswordResult = await userManager.RemovePasswordAsync(user);
 
         if (!removePasswordResult.Succeeded)

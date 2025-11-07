@@ -43,7 +43,7 @@ public class UserManagementController(IUserManagementService userManagementServi
         var user = await userManagementService.GetUserByIdAsync(id);
 
         if (user == null)
-            return NotFound(new { message = "Usuario no encontrado" });
+            return NotFound(new { message = "User not found" });
 
         return Ok(user);
     }
@@ -68,7 +68,7 @@ public class UserManagementController(IUserManagementService userManagementServi
         if (!success)
             return BadRequest(new { errors });
 
-        return Ok(new { message = "Usuario creado exitosamente", userId });
+        return Ok(new { message = "User created successfully", userId });
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public class UserManagementController(IUserManagementService userManagementServi
         if (!success)
             return BadRequest(new { errors });
 
-        return Ok(new { message = "Usuario actualizado exitosamente" });
+        return Ok(new { message = "User updated successfully" });
     }
 
     /// <summary>
@@ -114,14 +114,14 @@ public class UserManagementController(IUserManagementService userManagementServi
 
         if (!success)
         {
-            var errorMessage = errors?.FirstOrDefault() ?? "Error al eliminar usuario";
-            if (errorMessage.Contains("propia cuenta"))
+            var errorMessage = errors?.FirstOrDefault() ?? "Error deleting user";
+            if (errorMessage.Contains("own account"))
                 return BadRequest(new { message = errorMessage });
 
             return NotFound(new { message = errorMessage });
         }
 
-        return Ok(new { message = "Usuario eliminado exitosamente" });
+        return Ok(new { message = "User deleted successfully" });
     }
 
     /// <summary>
@@ -142,14 +142,14 @@ public class UserManagementController(IUserManagementService userManagementServi
 
         if (!success)
         {
-            var errorMessage = errors?.FirstOrDefault() ?? "Error al asignar roles";
-            if (errorMessage.Contains("no encontrado"))
+            var errorMessage = errors?.FirstOrDefault() ?? "Error assigning roles";
+            if (errorMessage.Contains("not found"))
                 return NotFound(new { message = errorMessage });
 
             return BadRequest(new { errors });
         }
 
-        return Ok(new { message = "Roles asignados exitosamente", roles = assignedRoles });
+        return Ok(new { message = "Roles assigned successfully", roles = assignedRoles });
     }
 
     /// <summary>
@@ -175,8 +175,8 @@ public class UserManagementController(IUserManagementService userManagementServi
 
         if (!success)
         {
-            var errorMessage = errors?.FirstOrDefault() ?? "Error al bloquear usuario";
-            if (errorMessage.Contains("propia cuenta"))
+            var errorMessage = errors?.FirstOrDefault() ?? "Error locking user";
+            if (errorMessage.Contains("own account"))
                 return BadRequest(new { message = errorMessage });
 
             return NotFound(new { message = errorMessage });
@@ -184,7 +184,7 @@ public class UserManagementController(IUserManagementService userManagementServi
 
         return Ok(new
         {
-            message = "Usuario bloqueado exitosamente",
+            message = "User locked successfully",
             lockoutEnd
         });
     }
@@ -206,14 +206,14 @@ public class UserManagementController(IUserManagementService userManagementServi
 
         if (!success)
         {
-            var errorMessage = errors?.FirstOrDefault() ?? "Error al desbloquear usuario";
-            if (errorMessage.Contains("no encontrado"))
+            var errorMessage = errors?.FirstOrDefault() ?? "Error unlocking user";
+            if (errorMessage.Contains("not found"))
                 return NotFound(new { message = errorMessage });
 
             return BadRequest(new { errors });
         }
 
-        return Ok(new { message = "Usuario desbloqueado exitosamente" });
+        return Ok(new { message = "User unlocked successfully" });
     }
 
     /// <summary>
@@ -234,14 +234,14 @@ public class UserManagementController(IUserManagementService userManagementServi
 
         if (!success)
         {
-            var errorMessage = errors?.FirstOrDefault() ?? "Error al restablecer contraseña";
-            if (errorMessage.Contains("no encontrado"))
+            var errorMessage = errors?.FirstOrDefault() ?? "Error resetting password";
+            if (errorMessage.Contains("not found"))
                 return NotFound(new { message = errorMessage });
 
             return BadRequest(new { errors });
         }
 
-        return Ok(new { message = "Contraseña restablecida exitosamente" });
+        return Ok(new { message = "Password reset successfully" });
     }
 
     /// <summary>

@@ -17,7 +17,7 @@ public class CreateUserRequest
     /// Must be a valid email address format.
     /// </summary>
     [Required]
-    [EmailAddress(ErrorMessage = "Email inválido")]
+    [EmailAddress(ErrorMessage = "Invalid email")]
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
@@ -25,7 +25,7 @@ public class CreateUserRequest
     /// Must be at least 6 characters long.
     /// </summary>
     [Required]
-    [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+    [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
@@ -55,7 +55,7 @@ public class UpdateUserRequest
     /// <summary>
     /// Gets or sets the new email address. Must be a valid email format if provided. Null if not being updated.
     /// </summary>
-    [EmailAddress(ErrorMessage = "Email inválido")]
+    [EmailAddress(ErrorMessage = "Invalid email")]
     public string? Email { get; set; }
     
     /// <summary>
@@ -104,6 +104,6 @@ public class ResetPasswordModel
     /// Must be at least 6 characters long.
     /// </summary>
     [Required]
-    [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+    [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
     public string NewPassword { get; set; } = string.Empty;
 }
