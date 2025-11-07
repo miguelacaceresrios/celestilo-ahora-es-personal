@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using backend.Services;
+using backend.Services.Interfaces;
 using backend.Model.Auth;
 namespace backend.Controllers.Api;
 
