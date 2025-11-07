@@ -4,6 +4,7 @@ using backend.Services;
 using backend.Configuration;
 using Microsoft.AspNetCore.Http;
 using backend.Model.Auth;
+using Microsoft.VisualBasic;
 
 namespace backend.Tests.Services;
 
@@ -31,9 +32,9 @@ public class AuthServiceTests
             null!, // ILookupNormalizer 
             null!, // IdentityErrorDescriber
             null!, // IServiceProvider
-            null!, // ILogger<UserManager<IdentityUser>>
-            null!  // IUserConfirmation<IdentityUser>
-        );
+            null! // ILogger<UserManager<IdentityUser>>
+        )
+        { CallBase = true };
 
         return userManagerMock;
     }
@@ -110,24 +111,19 @@ public class AuthServiceTests
     }
 
     /// <summary>
-    /// Test básico que muestra cómo un mock simula un comportamiento exitoso.
-    /// El mock de UserManager simula que crea un usuario exitosamente.
+    /// Tests successful user registration with valid data.
     /// </summary>
     [Fact]
     public async Task RegisterUserAsync_WithValidData_ShouldCreateUser()
     {
-        // Arrange: Set up test data and dependencies
+        // Arrange
         var (userManagerMock, signInManagerMock, logger, jwtSettings) = CreateAuthServiceDependencies();
 
-        // Aquí está la "magia" del mock: Setup() configura qué debe devolver cuando se llame a CreateAsync
-        // Simula que el usuario se creó exitosamente (Success)
         userManagerMock.Setup(x => x.CreateAsync(It.IsAny<IdentityUser>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
 
-        // Setup: Simula que AddToRoleAsync agrega exitosamente el rol "User"
         userManagerMock.Setup(x => x.AddToRoleAsync(It.IsAny<IdentityUser>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
 
-        // Setup: Simula que GetRolesAsync devuelve "User"
-        userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<IdentityUser>())).ReturnsAsync(new List<string> { "User" });
+        userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<IdentityUser>())).ReturnsAsync(["User"]);
 
         var authService = new AuthService(userManagerMock.Object, signInManagerMock.Object, jwtSettings, logger);
 
@@ -135,27 +131,26 @@ public class AuthServiceTests
         {
             UserName = "testuser",
             Email = "test@example.com",
-            Password = "Password123!"
+            Password = "Password123"
         };
 
-        // Act: Ejecutar el método de registro
+        // Act
         var (succeeded, response, errors) = await authService.RegisterUserAsync(registerModel);
 
-        // Assert: Verificar que el mock funcionó correctamente
+        // Assert
         succeeded.Should().BeTrue();
         response.Should().NotBeNull();
         response!.Token.Should().NotBeEmpty();
         response.Username.Should().Be("testuser");
         response.Email.Should().Be("test@example.com");
         response.Roles.Should().Contain("User");
-
-        // Verificar que el mock fue llamado exactamente una vez
+        errors.Should().BeNull();
         userManagerMock.Verify(x => x.CreateAsync(It.IsAny<IdentityUser>(), It.IsAny<string>()), Times.Once);
+        userManagerMock.Verify(x=> x.AddToRoleAsync(It.IsAny<IdentityUser>(), It.IsAny<string>()), Times.Once);
     }
 
     /// <summary>
-    /// Test que muestra cómo un mock simula un error.
-    /// El mock simula que la creación de usuario falla (por ejemplo, email duplicado).
+    /// Tests user registration failure when email already exists.
     /// </summary>
     [Fact]
     public async Task RegisterUserAsync_WithDuplicateEmail_ShouldReturnError()
@@ -163,7 +158,6 @@ public class AuthServiceTests
         // Arrange
         var (userManagerMock, signInManagerMock, logger, jwtSettings) = CreateAuthServiceDependencies();
 
-        // Setup: Simula que la creación falla con un error de email duplicado
         var error = new IdentityError { Code = "DuplicateEmail", Description = "Email already exists" };
 
         userManagerMock.Setup(x => x.CreateAsync(It.IsAny<IdentityUser>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Failed(error));
@@ -180,7 +174,7 @@ public class AuthServiceTests
         // Act
         var (succeeded, response, errors) = await authService.RegisterUserAsync(registerModel);
 
-        // Assert: Verificar que el mock simuló correctamente el error
+        // Assert
         succeeded.Should().BeFalse();
         response.Should().BeNull();
         errors.Should().NotBeNull();
@@ -189,8 +183,7 @@ public class AuthServiceTests
     }
 
     /// <summary>
-    /// Test que muestra cómo un mock simula un login exitoso.
-    /// El mock simula encontrar el usuario y verificar la contraseña correctamente.
+    /// Tests successful login with valid credentials.
     /// </summary>
     [Fact]
     public async Task LoginUserAsync_WithValidCredentials_ShouldReturnToken()
@@ -205,13 +198,10 @@ public class AuthServiceTests
             Email = "login@example.com"
         };
 
-        // Setup: Simula encontrar el usuario por email
         userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(testUser);
 
-        // Setup: Simula que la verificación de contraseña es exitosa
         signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(It.IsAny<IdentityUser>(), It.IsAny<string>(), false)).ReturnsAsync(SignInResult.Success);
 
-        // Setup: Simula obtener los roles del usuario
         userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<IdentityUser>())).ReturnsAsync(new List<string> { "User" });
 
         var authService = new AuthService(userManagerMock.Object, signInManagerMock.Object, jwtSettings, logger);
@@ -232,14 +222,12 @@ public class AuthServiceTests
         response.Email.Should().Be("login@example.com");
         response.Username.Should().Be("loginuser");
 
-        // Verificar que los mocks fueron llamados
         userManagerMock.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Once);
         signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(It.IsAny<IdentityUser>(), It.IsAny<string>(), false), Times.Once);
     }
 
     /// <summary>
-    /// Test que muestra cómo un mock simula un login fallido (usuario no encontrado).
-    /// El mock simula que FindByEmailAsync devuelve null.
+    /// Tests login failure when user does not exist.
     /// </summary>
     [Fact]
     public async Task LoginUserAsync_WithNonExistentUser_ShouldReturnFalse()
@@ -247,7 +235,6 @@ public class AuthServiceTests
         // Arrange
         var (userManagerMock, signInManagerMock, logger, jwtSettings) = CreateAuthServiceDependencies();
 
-        // Setup: Simula que NO encuentra ningún usuario (devuelve null)
         userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((IdentityUser?)null);
 
         var authService = new AuthService(userManagerMock.Object, signInManagerMock.Object, jwtSettings, logger);
@@ -265,15 +252,12 @@ public class AuthServiceTests
         succeeded.Should().BeFalse();
         response.Should().BeNull();
 
-        // Verificar que FindByEmailAsync fue llamado
         userManagerMock.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Once);
-        // Verificar que CheckPasswordSignInAsync NO fue llamado (porque no encontró usuario)
         signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(It.IsAny<IdentityUser>(), It.IsAny<string>(), false), Times.Never);
     }
 
     /// <summary>
-    /// Test que muestra cómo un mock simula una contraseña incorrecta.
-    /// El mock encuentra al usuario pero simula que la contraseña es incorrecta.
+    /// Tests login failure when password is incorrect.
     /// </summary>
     [Fact]
     public async Task LoginUserAsync_WithWrongPassword_ShouldReturnFalse()
@@ -288,12 +272,10 @@ public class AuthServiceTests
             Email = "wrongpass@example.com"
         };
 
-        // Setup: Encuentra el usuario
         userManagerMock
             .Setup(x => x.FindByEmailAsync(It.IsAny<string>()))
             .ReturnsAsync(testUser);
 
-        // Setup: Simula que la contraseña es incorrecta
         signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(It.IsAny<IdentityUser>(), It.IsAny<string>(), false)).ReturnsAsync(SignInResult.Failed);
 
         var authService = new AuthService(userManagerMock.Object, signInManagerMock.Object, jwtSettings, logger);
@@ -311,7 +293,6 @@ public class AuthServiceTests
         succeeded.Should().BeFalse();
         response.Should().BeNull();
 
-        // Verificar que ambos mocks fueron llamados
         userManagerMock.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Once);
         signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(It.IsAny<IdentityUser>(), It.IsAny<string>(), false), Times.Once);
     }
