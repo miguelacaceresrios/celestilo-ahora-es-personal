@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using backend.Configuration;
 using backend.Data;
+using backend.Services.Interfaces;
 using backend.Services;
 
 /// <summary>
