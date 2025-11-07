@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.DTOs;
 using backend.Model;
+using backend.Services.Interfaces;
 namespace backend.Services;
 
 /// <summary>
@@ -81,7 +82,7 @@ public class ProductService(ProductDbContext context, ILogger<ProductService> lo
     /// - The created <see cref="ProductDto"/> object if successful, otherwise null.
     /// - A boolean indicating if the operation succeeded.
     /// </returns>
-    public async Task<(ProductDto?, bool Success)> AddProductAsync(CreateProductDto productDto)
+    public async Task<(ProductDto?, bool success)> AddProductAsync(CreateProductDto productDto)
     {
         var correlationId = Guid.NewGuid().ToString();
 
@@ -137,7 +138,7 @@ public class ProductService(ProductDbContext context, ILogger<ProductService> lo
     /// - The updated <see cref="ProductDto"/> object if successful, otherwise null.
     /// - A boolean indicating if the operation succeeded.
     /// </returns>
-    public async Task<(ProductDto?, bool Success)> UpdateProductAsync(int id, UpdateProductDto productDto)
+    public async Task<(ProductDto?, bool success)> UpdateProductAsync(int id, UpdateProductDto productDto)
     {
         var correlationId = Guid.NewGuid().ToString();
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Model.Auth;
+using backend.Services.Interfaces;
 namespace backend.Services;
 
 /// <summary>
@@ -77,7 +78,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     /// - The created user's ID if successful, otherwise null.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    public async Task<(bool Success, string? UserId, IEnumerable<string>? Errors)> CreateUserAsync(CreateUserRequest model)
+    public async Task<(bool success, string? userId, IEnumerable<string>? errors)> CreateUserAsync(CreateUserRequest model)
     {
         var user = new IdentityUser
         {
@@ -122,7 +123,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    public async Task<(bool Success, IEnumerable<string>? Errors)> UpdateUserAsync(string id, UpdateUserRequest model)
+    public async Task<(bool success, IEnumerable<string>? errors)> UpdateUserAsync(string id, UpdateUserRequest model)
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
@@ -160,7 +161,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    public async Task<(bool Success, IEnumerable<string>? Errors)> DeleteUserAsync(string id, string currentUserId)
+    public async Task<(bool success, IEnumerable<string>? errors)> DeleteUserAsync(string id, string currentUserId)
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
@@ -190,7 +191,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     /// - A collection of successfully assigned role names.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    public async Task<(bool Success, IEnumerable<string> AssignedRoles, IEnumerable<string>? Errors)> AssignRolesToUserAsync(
+    public async Task<(bool success, IEnumerable<string> assignedRoles, IEnumerable<string>? Errors)> AssignRolesToUserAsync(
         string id, 
         IEnumerable<string> roles)
     {
@@ -236,7 +237,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     /// - The lockout end date if successful, otherwise null.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    public async Task<(bool Success, DateTimeOffset? LockoutEnd, IEnumerable<string>? Errors)> LockUserAsync(
+    public async Task<(bool success, DateTimeOffset? lockoutEnd, IEnumerable<string>? errors)> LockUserAsync(
         string id, 
         string currentUserId, 
         int? lockoutMinutes)
@@ -269,7 +270,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    public async Task<(bool Success, IEnumerable<string>? Errors)> UnlockUserAsync(string id)
+    public async Task<(bool success, IEnumerable<string>? errors)> UnlockUserAsync(string id)
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)
@@ -294,7 +295,7 @@ public class UserManagementService(UserManager<IdentityUser> userManager,RoleMan
     /// - A boolean indicating if the operation succeeded.
     /// - A collection of error messages if the operation failed, otherwise null.
     /// </returns>
-    public async Task<(bool Success, IEnumerable<string>? Errors)> ResetPasswordAsync(string id, string newPassword)
+    public async Task<(bool success, IEnumerable<string>? errors)> ResetPasswordAsync(string id, string newPassword)
     {
         var user = await userManager.FindByIdAsync(id);
         if (user == null)

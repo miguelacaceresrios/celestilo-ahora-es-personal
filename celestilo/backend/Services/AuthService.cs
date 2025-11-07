@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using backend.Configuration;
 using backend.Model.Auth;
+using backend.Services.Interfaces;
 namespace backend.Services;
 
 /// <summary>
@@ -24,7 +25,7 @@ public class AuthService(UserManager<IdentityUser> userManager, SignInManager<Id
     /// - An <see cref="AuthResponse"/> object with JWT token and user information if successful, otherwise null.
     /// - A collection of <see cref="IdentityError"/> objects if registration failed, otherwise null.
     /// </returns>
-    public async Task<(bool Succeeded, AuthResponse? Response, IEnumerable<IdentityError>? Errors)> RegisterUserAsync(RegisterModel model)
+    public async Task<(bool succeeded, AuthResponse? response, IEnumerable<IdentityError>? Errors)> RegisterUserAsync(RegisterModel model)
     {
         var correlationId = Guid.NewGuid().ToString();
         try
@@ -87,7 +88,7 @@ public class AuthService(UserManager<IdentityUser> userManager, SignInManager<Id
     /// - A boolean indicating if the login succeeded.
     /// - An <see cref="AuthResponse"/> object with JWT token and user information if successful, otherwise null.
     /// </returns>
-    public async Task<(bool Succeeded, AuthResponse? Response)> LoginUserAsync(LoginModel model)
+    public async Task<(bool succeeded, AuthResponse? response)> LoginUserAsync(LoginModel model)
     {
         var correlationId = Guid.NewGuid().ToString();
 
