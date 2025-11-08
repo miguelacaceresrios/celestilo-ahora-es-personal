@@ -3,7 +3,7 @@ using backend.Data;
 using backend.DTOs;
 using backend.Model;
 using backend.Services.Interfaces;
-namespace backend.Services;
+namespace backend.Services.Implementations;
 
 /// <summary>
 /// Service implementation for managing product operations including CRUD operations.

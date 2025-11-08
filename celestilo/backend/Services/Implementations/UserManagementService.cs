@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Model.Auth;
 using backend.Services.Interfaces;
-namespace backend.Services;
+namespace backend.Services.Implementations;
 
 /// <summary>
 /// Service implementation for managing user accounts, roles, and user-related operations.

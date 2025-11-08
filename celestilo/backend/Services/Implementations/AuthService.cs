@@ -6,7 +6,7 @@ using System.Text;
 using backend.Configuration;
 using backend.Model.Auth;
 using backend.Services.Interfaces;
-namespace backend.Services;
+namespace backend.Services.Implementations;
 
 /// <summary>
 /// Service implementation for handling authentication operations including user registration and login.
